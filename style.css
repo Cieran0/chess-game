@@ -1,0 +1,10 @@
+body {
+    background-color: lightgrey;
+}
+
+#board { 
+    border:1px solid #000000;
+    margin: auto;
+    display: block;
+    background-color: white;
+}
