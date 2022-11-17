@@ -110,6 +110,25 @@ function drawSquare(ctx, x, y) {
     ctx.fill();
 }
 
+function pawnMoves(piece) {
+    // TODO: determine valid moves for a piece of type pawn
+} 
+function rookMoves(piece) {
+    // TODO: determine valid moves for a piece of type rook
+}
+function bishopMoves(piece) {
+    // TODO: determine valid moves for a piece of type bishop
+}
+function knightMoves(piece) {
+    // TODO: determine valid moves for a piece of type knight
+}
+function kingMoves(piece) {
+    // TODO: determine valid moves for a piece of type king
+}
+function queenMoves(piece) {
+    // TODO: determine valid moves for a piece of type queen
+}
+
 class Piece {
     constructor(team, type, x, y) {
         this.team = team;
@@ -126,5 +145,22 @@ class Piece {
 
     move(newx, newy) { this.x = newx; this.y = newy; console.log("Moving"); drawBoard();} 
 
+    getValidMoves() {
+        switch (this.type) {
+            case "pawn":
+                return pawnMoves(this); 
+            case "rook":
+                return rookMoves(this);
+            case "bishop":
+                return bishopMoves(this);
+            case "knight":
+                return knightMoves(this);
+            case "king":
+                return kingMoves(this);
+            case "queen":
+                return queenMoves(this);
+        }
+        return null;
+    }
 }
   
