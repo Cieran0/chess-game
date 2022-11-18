@@ -1,5 +1,4 @@
-var whitePieces = new Array();
-var blackPieces = new Array();
+var board = new Array(8);
 
 let selectedPiece = null;
 let ctx = null;
@@ -25,22 +24,6 @@ window.onload = function() {
     setUpMouseEvent();
 };
 
-function selectPiece(x, y) {
-    for(i =0; i< whitePieces.length; i++) {
-        if(whitePieces[i].x == x && whitePieces[i].y == y) {
-            selectedPiece = whitePieces[i];
-            return;
-        }
-
-    }
-    for(i =0; i< blackPieces.length; i++) {
-        if(blackPieces[i].x == x && blackPieces[i].y == y) {
-            selectedPiece = blackPieces[i];
-            return;
-        }
-    }
-    selectedPiece =  null;
-}
 
 function norm(num) {
     return (Math.floor(num/75));
@@ -51,7 +34,7 @@ function handleMouse(mousePos) {
     var y = norm(mousePos.y);
     console.log("X: " + x + " Y: " + y);
     if(selectedPiece == null) {
-        selectPiece(x,y);
+        selectedPiece = board[x][y];
         console.log(selectedPiece);
     }
     else {
@@ -69,6 +52,13 @@ function handleMouse(mousePos) {
 }
 
 function setUpPieces() {
+    for (var i = 0; i < 8; i++) {
+        board[i] = new Array(8);
+        for(var j = 0; j < 8; j++) {
+            board[i][j] = null;
+        }
+    }
+
     addSymmetrical("rook",0,0);
     addSymmetrical("rook",7,0);
     addSymmetrical("knight",1,0);
@@ -81,8 +71,8 @@ function setUpPieces() {
 }
 
 function addSymmetrical(type, x, y) {
-    blackPieces.push(new Piece("black", type,x,y));
-    whitePieces.push(new Piece("white", type,x,7-y));
+    board[x][y]   = new Piece("black", type,x,y);
+    board[x][7-y] = new Piece("white", type,x,7-y);
 }
 
 function drawBoard() {
@@ -95,13 +85,7 @@ function drawBoard() {
     for (i = 0; i <8; i++) {
         drawLine(i);
     }
-    whitePieces.forEach(element => {
-        element.draw();
-    });
-
-    blackPieces.forEach(element => {
-        element.draw();
-    });
+    for(y=0;y<8;y++) for(x=0;x<8;x++) if(board[x][y] != null) board[x][y].draw();
     drawValidMoves(selectedPiece);
 }
 
@@ -127,9 +111,15 @@ function canMove(piece, x, y) {
     return false;
 }
 
-function pushIfValid(array, position) {
-    if(position.x > 7 || position.x < 0 || position.y > 7 || position.y < 0) { return; }
+function pushIfValid(piece, array, position) {
+    keepGoing = true;
+    if(position.x < 0 || position.y < 0 || position.x > 7 || position.y > 7) return true;
+    if(board[position.x][position.y] != null) {
+        if(board[position.x][position.y].team == piece.team) return false;
+        else keepGoing=false;
+    }
     array.push(position);
+    return keepGoing;
 }
 
 function drawValidMoves(piece) {
@@ -142,43 +132,47 @@ function drawValidMoves(piece) {
 }
 
 function pawnMoves(piece) {
+    // TODO: make pawn only take diagonly (like / or \)
     validMoves = new Array();
-    if(!piece.hasMoved) { pushIfValid(validMoves, ( (piece.team == "black")? {x: piece.x, y: piece.y+2} : {x: piece.x, y: piece.y-2})); } 
-    pushIfValid(validMoves, ( (piece.team == "black")? {x: piece.x, y: piece.y+1} : {x: piece.x, y: piece.y-1}));
+    if(!piece.hasMoved) { pushIfValid(piece, validMoves, ( (piece.team == "black")? {x: piece.x, y: piece.y+2} : {x: piece.x, y: piece.y-2})); } 
+    pushIfValid(piece, validMoves, ( (piece.team == "black")? {x: piece.x, y: piece.y+1} : {x: piece.x, y: piece.y-1}));
     return validMoves;
 } 
 function rookMoves(piece) {
     validMoves = new Array();
-    for(i = 0; i < 8; i++) {
-        if(i == piece.x) continue;
-        pushIfValid(validMoves,{x: i, y: piece.y});
-    }
-    for(i = 0; i < 8; i++) {
-        if(i == piece.y) continue;
-        pushIfValid(validMoves,{x: piece.x, y: i});
+    up = true;
+    down = true;
+    left = true;
+    right = true;
+    for(i = 1; i < 8; i++) {
+        if(left)  { left  = pushIfValid(piece, validMoves,{x: piece.x-i, y: piece.y}); }
+        if(right) { right = pushIfValid(piece, validMoves,{x: piece.x+i, y: piece.y}); }
+        if(up)    { up    = pushIfValid(piece, validMoves,{x: piece.x, y: piece.y-i}); }
+        if(down)  { down  = pushIfValid(piece, validMoves,{x: piece.x, y: piece.y+i}); }
     }
     return validMoves;
 }
 function bishopMoves(piece) {
+    // TODO: fix bishop movemnt to new system 
     validMoves = new Array();
     for(i = -7; i < 8; i++) {
         if(i == 0 ) continue;
-        pushIfValid(validMoves, {x: piece.x + i, y: piece.y + i})
-        pushIfValid(validMoves, {x: piece.x - i, y: piece.y + i})
+        pushIfValid(piece, validMoves, {x: piece.x + i, y: piece.y + i})
+        pushIfValid(piece, validMoves, {x: piece.x - i, y: piece.y + i})
     }
     return validMoves;
 }
 function knightMoves(piece) {
     // TODO: Find better way of checking valid moves for the knight! 
     validMoves = new Array();
-    pushIfValid(validMoves, {x: piece.x-1, y: piece.y - 2});
-    pushIfValid(validMoves, {x: piece.x+1, y: piece.y - 2});
-    pushIfValid(validMoves, {x: piece.x-1, y: piece.y + 2});
-    pushIfValid(validMoves, {x: piece.x+1, y: piece.y + 2});
-    pushIfValid(validMoves, {x: piece.x-2, y: piece.y - 1});
-    pushIfValid(validMoves, {x: piece.x+2, y: piece.y - 1});
-    pushIfValid(validMoves, {x: piece.x-2, y: piece.y + 1});
-    pushIfValid(validMoves, {x: piece.x+2, y: piece.y + 1});
+    pushIfValid(piece, validMoves, {x: piece.x-1, y: piece.y - 2});
+    pushIfValid(piece, validMoves, {x: piece.x+1, y: piece.y - 2});
+    pushIfValid(piece, validMoves, {x: piece.x-1, y: piece.y + 2});
+    pushIfValid(piece, validMoves, {x: piece.x+1, y: piece.y + 2});
+    pushIfValid(piece, validMoves, {x: piece.x-2, y: piece.y - 1});
+    pushIfValid(piece, validMoves, {x: piece.x+2, y: piece.y - 1});
+    pushIfValid(piece, validMoves, {x: piece.x-2, y: piece.y + 1});
+    pushIfValid(piece, validMoves, {x: piece.x+2, y: piece.y + 1});
     return validMoves;
 }
 function kingMoves(piece) {
@@ -186,7 +180,7 @@ function kingMoves(piece) {
     for(i = -1; i < 2; i++) {
         for(j = -1; j < 2; j++) {
             if(i == 0 && j == 0) { continue; }
-            pushIfValid(validMoves,{x: piece.x + i, y: piece.y + j});
+            pushIfValid(piece, validMoves,{x: piece.x + i, y: piece.y + j});
         }
     } 
     return validMoves;
@@ -210,7 +204,15 @@ class Piece {
         ctx.fillText(this.team[0] + (this.type.toUpperCase()), this.x*75 + 10/((this.team[0]+this.type).length-4), this.y*75 + 40);
     }
 
-    move(newx, newy) { this.x = newx; this.y = newy; console.log("Moving"); drawBoard(); this.hasMoved = true;} 
+    move(newx, newy) {
+        board[this.x][this.y] = null; 
+        this.x = newx; 
+        this.y = newy; 
+        console.log("Moving"); 
+        this.hasMoved = true;
+        board[this.x][this.y] = this;
+        drawBoard(); 
+    } 
 
     getValidMoves() {
         switch (this.type) {
