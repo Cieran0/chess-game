@@ -53,15 +53,19 @@ function handleMouse(mousePos) {
     if(selectedPiece == null) {
         selectPiece(x,y);
         console.log(selectedPiece);
-        if(selectedPiece != null) {
-            drawValidMoves(selectedPiece);
-        }
     }
     else {
         console.log(selectedPiece.type);
-        selectedPiece.move(x,y);
+        if(canMove(selectedPiece,x,y)) {
+            selectedPiece.move(x,y);
+        }
+        else {
+            console.log("invalid move");
+            console.log(selectedPiece.getValidMoves());
+        }
         selectedPiece = null;
     }
+    drawBoard();
 }
 
 function setUpPieces() {
@@ -98,6 +102,7 @@ function drawBoard() {
     blackPieces.forEach(element => {
         element.draw();
     });
+    drawValidMoves(selectedPiece);
 }
 
 function drawLine(y) {
@@ -114,12 +119,21 @@ function drawSquare(x, y, colour) {
     ctx.fill();
 }
 
+function canMove(piece, x, y) {
+    validMoves = piece.getValidMoves();
+    for(i =0; i < validMoves.length; i++ ){
+        if(validMoves[i].x == x && validMoves[i].y == y) return true;
+    }
+    return false;
+}
+
 function pushIfValid(array, position) {
     if(position.x > 7 || position.x < 0 || position.y > 7 || position.y < 0) { return; }
     array.push(position);
 }
 
 function drawValidMoves(piece) {
+    if(piece == null) return;
     validMoves = piece.getValidMoves();
     if(validMoves == null || validMoves.length < 1) return;
     validMoves.forEach(element => {
@@ -171,8 +185,8 @@ function kingMoves(piece) {
     validMoves = new Array();
     for(i = -1; i < 2; i++) {
         for(j = -1; j < 2; j++) {
-            if(i == piece.x && j == piece.y) { continue; }
-            pushIfValid(validMoves,{x: i, y: j});
+            if(i == 0 && j == 0) { continue; }
+            pushIfValid(validMoves,{x: piece.x + i, y: piece.y + j});
         }
     } 
     return validMoves;
