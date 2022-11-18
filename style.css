@@ -8,3 +8,9 @@ body {
     display: block;
     background-color: white;
 }
+
+h1 {
+    margin: auto;
+    display: block;
+    text-align: center;
+}

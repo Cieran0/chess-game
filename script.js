@@ -1,5 +1,5 @@
-var board = new Array(8);
-
+let board = null;
+let turn = null;
 let selectedPiece = null;
 let ctx = null;
 
@@ -19,12 +19,98 @@ function setUpMouseEvent() {
 }
 
 window.onload = function() {
-    setUpPieces();
-    drawBoard();
+    startGame();
     setUpMouseEvent();
 };
 
+function startGame() {
+    board = new Board();
+    board.setUpPieces();
+    turn = "black";
+    nextTurn();
+    drawBoard();
+}       
 
+function makeVirtualBoard() {
+    return new Board(board);
+}
+
+function canUnCheck(team) {
+    moves = new Array();
+    for(let y=0;y<8;y++) {
+        for(let x=0;x<8;x++) {
+            if(board.board[x][y] == null);
+            else if(board.board[x][y].team == team) {
+                vMoves = board.board[x][y].getValidMoves();
+                for(let i=0;i<vMoves.length; i++) {
+                    moves.push({x: x, y: y, move: vMoves[i]});
+                }
+            }
+        }
+    }
+    console.log("possible moves count: " + moves.length);
+    for(let  i =0; i <moves.length; i++) {
+        console.log(i);
+        vBoard = makeVirtualBoard();
+        vBoard.board[moves[i].x][moves[i].y].move(moves[i].move.x,moves[i].move.y,vBoard);
+        if(getChecked(vBoard) != team) return true;
+    }
+    return false;
+}
+
+function isEmpty(x,y,b) {
+    if(x>7||y>7||x<0||y<0) return true;
+    if(b.board[x][y] == null) return true;
+    return false;
+}
+
+function nextTurn() {
+    turn = (turn == "white")? "black" : "white";
+    document.getElementById("turn").innerHTML = "Turn: " + turn;
+    check = getChecked(board);
+    if(check != null) {
+        document.getElementById("check").innerHTML = "Check: " + check;
+        if(!canUnCheck(check)) { 
+            document.getElementById("check").innerHTML = "";
+            alert(check + " has been checkmated, " + ((check == "black")? "white" : "black" ) + " has won!");
+            startGame();     
+        }
+    }
+}
+
+function getKing(colour, b) {
+    for(let y=0;y<8;y++) {
+        for(let x=0;x<8;x++) {
+            if(b.board[x][y] == null);
+            else if(b.board[x][y].team == colour && b.board[x][y].type == "king") return b.board[x][y];
+        }
+    }
+}
+
+function canTake(validMoves, x, y) {
+    for(let i =0; i < validMoves.length; i++) {
+        if(validMoves[i].x == x && validMoves[i].y == y) return true;
+    }
+    return false;
+}
+
+function getChecked(b) {
+    whiteKing = getKing("white", b);
+    blackKing = getKing("black", b);
+
+    for(let y=0;y<8;y++) {
+        for(let x=0;x<8;x++) {
+            if(b.board[x][y] == null);
+            else if(canTake(b.board[x][y].getValidMoves(),whiteKing.x,whiteKing.y)) {
+                return "white";
+            } else if (canTake(b.board[x][y].getValidMoves(),blackKing.x,blackKing.y)) {
+                return "black";
+            }
+        }
+    }
+    return null;
+
+}
 function norm(num) {
     return (Math.floor(num/75));
 }
@@ -34,13 +120,16 @@ function handleMouse(mousePos) {
     var y = norm(mousePos.y);
     console.log("X: " + x + " Y: " + y);
     if(selectedPiece == null) {
-        selectedPiece = board[x][y];
-        console.log(selectedPiece);
+        selectedPiece = board.board[x][y];
+        if(selectedPiece == null); 
+        else if(selectedPiece.team != turn) selectedPiece = null;
     }
     else {
         console.log(selectedPiece.type);
         if(canMove(selectedPiece,x,y)) {
-            selectedPiece.move(x,y);
+            selectedPiece.move(x,y,board);
+            nextTurn();
+            drawBoard();
         }
         else {
             console.log("invalid move");
@@ -51,29 +140,6 @@ function handleMouse(mousePos) {
     drawBoard();
 }
 
-function setUpPieces() {
-    for (var i = 0; i < 8; i++) {
-        board[i] = new Array(8);
-        for(var j = 0; j < 8; j++) {
-            board[i][j] = null;
-        }
-    }
-
-    addSymmetrical("rook",0,0);
-    addSymmetrical("rook",7,0);
-    addSymmetrical("knight",1,0);
-    addSymmetrical("knight",6,0);
-    addSymmetrical("bishop",2,0);
-    addSymmetrical("bishop",5,0);
-    addSymmetrical("queen",3,0);
-    addSymmetrical("king",4,0);
-    for(i =0; i < 8; i++) { addSymmetrical("pawn", i,1); }
-}
-
-function addSymmetrical(type, x, y) {
-    board[x][y]   = new Piece("black", type,x,y);
-    board[x][7-y] = new Piece("white", type,x,7-y);
-}
 
 function drawBoard() {
     c = document.getElementById('board');
@@ -85,7 +151,7 @@ function drawBoard() {
     for (i = 0; i <8; i++) {
         drawLine(i);
     }
-    for(y=0;y<8;y++) for(x=0;x<8;x++) if(board[x][y] != null) board[x][y].draw();
+    for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(board.board[x][y] != null) board.board[x][y].draw();
     drawValidMoves(selectedPiece);
 }
 
@@ -105,7 +171,7 @@ function drawSquare(x, y, colour) {
 
 function canMove(piece, x, y) {
     validMoves = piece.getValidMoves();
-    for(i =0; i < validMoves.length; i++ ){
+    for(let i =0; i < validMoves.length; i++ ){
         if(validMoves[i].x == x && validMoves[i].y == y) return true;
     }
     return false;
@@ -114,8 +180,8 @@ function canMove(piece, x, y) {
 function pushIfValid(piece, array, position) {
     keepGoing = true;
     if(position.x < 0 || position.y < 0 || position.x > 7 || position.y > 7) return true;
-    if(board[position.x][position.y] != null) {
-        if(board[position.x][position.y].team == piece.team) return false;
+    if(board.board[position.x][position.y] != null) {
+        if(board.board[position.x][position.y].team == piece.team) return false;
         else keepGoing=false;
     }
     array.push(position);
@@ -131,11 +197,15 @@ function drawValidMoves(piece) {
     });
 }
 
-function pawnMoves(piece) {
-    // TODO: make pawn only take diagonly (like / or \)
+function pawnMoves(piece, b) {
     validMoves = new Array();
-    if(!piece.hasMoved) { pushIfValid(piece, validMoves, ( (piece.team == "black")? {x: piece.x, y: piece.y+2} : {x: piece.x, y: piece.y-2})); } 
-    pushIfValid(piece, validMoves, ( (piece.team == "black")? {x: piece.x, y: piece.y+1} : {x: piece.x, y: piece.y-1}));
+    up = (piece.team == "black")? 1 : -1;
+    if(isEmpty(piece.x,piece.y+up,b)) {
+        keepGoing = pushIfValid(piece, validMoves, {x: piece.x, y: piece.y+up});
+        if(!piece.hasMoved && keepGoing && isEmpty(piece.x, piece.y+(2*up),b)) { pushIfValid(piece, validMoves, {x: piece.x, y: piece.y+(2*up)}); } 
+    }
+    if(!isEmpty(piece.x+1,piece.y+up,b)) { pushIfValid(piece, validMoves, {x: piece.x+1, y: piece.y + up})};
+    if(!isEmpty(piece.x-1,piece.y+up,b)) { pushIfValid(piece, validMoves, {x: piece.x-1, y: piece.y + up})};
     return validMoves;
 } 
 function rookMoves(piece) {
@@ -144,7 +214,7 @@ function rookMoves(piece) {
     down = true;
     left = true;
     right = true;
-    for(i = 1; i < 8; i++) {
+    for(let i = 1; i < 8; i++) {
         if(left)  { left  = pushIfValid(piece, validMoves,{x: piece.x-i, y: piece.y}); }
         if(right) { right = pushIfValid(piece, validMoves,{x: piece.x+i, y: piece.y}); }
         if(up)    { up    = pushIfValid(piece, validMoves,{x: piece.x, y: piece.y-i}); }
@@ -153,12 +223,17 @@ function rookMoves(piece) {
     return validMoves;
 }
 function bishopMoves(piece) {
-    // TODO: fix bishop movemnt to new system 
     validMoves = new Array();
-    for(i = -7; i < 8; i++) {
+    up = true;
+    down = true;
+    left = true;
+    right = true;
+    for(let i = 1; i < 8; i++) {
         if(i == 0 ) continue;
-        pushIfValid(piece, validMoves, {x: piece.x + i, y: piece.y + i})
-        pushIfValid(piece, validMoves, {x: piece.x - i, y: piece.y + i})
+        if(left)  { left  = pushIfValid(piece, validMoves,{x: piece.x-i, y: piece.y + i}); }
+        if(right) { right = pushIfValid(piece, validMoves,{x: piece.x+i, y: piece.y + i}); }
+        if(up)    { up    = pushIfValid(piece, validMoves,{x: piece.x+i, y: piece.y - i}); }
+        if(down)  { down  = pushIfValid(piece, validMoves,{x: piece.x-i, y: piece.y - i}); }
     }
     return validMoves;
 }
@@ -177,8 +252,8 @@ function knightMoves(piece) {
 }
 function kingMoves(piece) {
     validMoves = new Array();
-    for(i = -1; i < 2; i++) {
-        for(j = -1; j < 2; j++) {
+    for(let i = -1; i < 2; i++) {
+        for(let j = -1; j < 2; j++) {
             if(i == 0 && j == 0) { continue; }
             pushIfValid(piece, validMoves,{x: piece.x + i, y: piece.y + j});
         }
@@ -189,13 +264,69 @@ function queenMoves(piece) {
     return rookMoves(piece).concat(bishopMoves(piece));
 }
 
+class Board {
+    constructor(b) {
+        this.board = new Array(8);
+        if(b == undefined) {
+            this.setUpPieces();
+        } else {
+            this.blank();
+            for (var i = 0; i < 8; i++) {
+                this.board[i] = new Array(8);
+                for(let j = 0; j < 8; j++) {
+                    this.board[i][j] = (b.board[i][j] == null)? null : new Piece(b.board[i][j]);
+                }
+            }
+        }
+    }
+
+
+    blank() {
+        for (var i = 0; i < 8; i++) {
+            this.board[i] = new Array(8);
+            for(let j = 0; j < 8; j++) {
+                this.board[i][j] = null;
+            }
+        }
+    }
+
+    setUpPieces() {
+        this.blank();
+        this.addSymmetrical("rook",0,0);
+        this.addSymmetrical("rook",7,0);
+        this.addSymmetrical("knight",1,0);
+        this.addSymmetrical("knight",6,0);
+        this.addSymmetrical("bishop",2,0);
+        this.addSymmetrical("bishop",5,0);
+        this.addSymmetrical("queen",3,0);
+        this.addSymmetrical("king",4,0);
+        for(let i =0; i < 8; i++) { 
+            this.addSymmetrical("pawn", i,1); 
+        }
+    }
+    
+    addSymmetrical(type, x, y) {
+        this.board[x][y]   = new Piece("black", type,x,y);
+        this.board[x][7-y] = new Piece("white", type,x,7-y);
+    }
+}
+
 class Piece {
     constructor(team, type, x, y) {
-        this.team = team;
-        this.type = type;
-        this.x = x;
-        this.y = y;
-        this.hasMoved = false;
+        if(type == undefined) {
+            let p = team;
+            this.team = p.team;
+            this.type = p.type;
+            this.x = p.x;
+            this.y = p.y;
+            this.hasMoved = p.hasMoved;
+        } else {
+            this.team = team;
+            this.type = type;
+            this.x = x;
+            this.y = y;
+            this.hasMoved = false;
+        }
     }
 
     draw() {
@@ -204,20 +335,18 @@ class Piece {
         ctx.fillText(this.team[0] + (this.type.toUpperCase()), this.x*75 + 10/((this.team[0]+this.type).length-4), this.y*75 + 40);
     }
 
-    move(newx, newy) {
-        board[this.x][this.y] = null; 
+    move(newx, newy, b) {
+        b.board[this.x][this.y] = null; 
         this.x = newx; 
         this.y = newy; 
-        console.log("Moving"); 
         this.hasMoved = true;
-        board[this.x][this.y] = this;
-        drawBoard(); 
+        b.board[this.x][this.y] = this;
     } 
 
     getValidMoves() {
         switch (this.type) {
             case "pawn":
-                return pawnMoves(this); 
+                return pawnMoves(this,board); 
             case "rook":
                 return rookMoves(this);
             case "bishop":
