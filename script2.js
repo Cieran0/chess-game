@@ -1,4 +1,5 @@
 let game = null;
+let selectedPiece = null;
 
 window.onload = function() {
     MouseHandler.setUpMouseEvent();
@@ -55,6 +56,12 @@ class Game {
         this.setUpPieces();
     }
 
+    move(from, to) {
+        console.log("Moving!")
+        this.board[to.x][to.y] = this.board[from.x][from.y];
+        this.board[from.x][from.y] = null;
+    }
+
     setUpPieces() {
         this.blank();
         this.addSymmetrical("rook",0,0);
@@ -103,14 +110,22 @@ class MouseHandler {
     }
 
     static handleMouse(mousePos) {
-        var x = mousePos.x;
-        var y = mousePos.y;
+        if(selectedPiece == null) {
+            if(game.board[mousePos.x][mousePos.y] != null) {
+                selectedPiece = Position.copyPos(mousePos);
+                console.log(selectedPiece)
+            }
+        } else {
+            game.move(selectedPiece,mousePos);
+            selectedPiece = null;
+        }
+        Canvas.drawBoard();
     }
 
     static setUpMouseEvent() {
         var canvas = document.getElementById("board");
         canvas.addEventListener("click", function (evt) {
-            handleMouse(getMousePos(canvas, evt));
+            MouseHandler.handleMouse(MouseHandler.getMousePos(canvas, evt));
         }, false);
     }
 }
@@ -119,6 +134,10 @@ class Position {
     constructor(x,y) {
         this.x = x;
         this.y = y;
+    }
+
+    static copyPos(pos) {
+        return new Position(pos.x,pos.y);
     }
 
     static norm(pos) {
