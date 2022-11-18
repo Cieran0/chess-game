@@ -158,7 +158,7 @@ function drawBoard() {
 function drawLine(y) {
     start = (y%2 == 0)? 1 : 0;
     for (;start < 8; start+=2) {
-        drawSquare(start,y, "black");
+        drawSquare(start,y, " #46AA22");
     }
 }
 
@@ -193,7 +193,7 @@ function drawValidMoves(piece) {
     validMoves = piece.getValidMoves();
     if(validMoves == null || validMoves.length < 1) return;
     validMoves.forEach(element => {
-        drawSquare(element.x,element.y,"green");
+        drawSquare(element.x,element.y,"cyan");
     });
 }
 
@@ -332,7 +332,8 @@ class Piece {
     draw() {
         ctx.fillStyle= "red";
         ctx.font = '15px serif';
-        ctx.fillText(this.team[0] + (this.type.toUpperCase()), this.x*75 + 10/((this.team[0]+this.type).length-4), this.y*75 + 40);
+        let str = this.team[0] + (this.type.toUpperCase());
+        ctx.drawImage(document.getElementById(str), 75*this.x, 75*this.y, 75, 75)
     }
 
     move(newx, newy, b) {
