@@ -34,6 +34,7 @@ class Canvas {
         this.drawValidMoves();
         this.drawPieces();
         document.getElementById("turn").innerHTML = "Turn: " + game.turn;
+        document.getElementById("check").innerHTML = "Check: " + game.check;
     }
     
     static drawLine(y) {
@@ -76,6 +77,48 @@ class Game {
         this.blank();
         this.setUpPieces();
         this.turn = "white";
+        this.check = null;
+    }
+
+    getKing(team) {
+        for(let y=0; y<8; y++) {
+            for(let x=0; x<8; x++) 
+            {
+                if(this.board[x][y] == null) continue;
+                if(this.board[x][y].team == team && this.board[x][y].type == "king") {
+                    return new Position(x,y); 
+        }   }   }
+        return null;
+    }
+
+    canTake(from, to) {
+        if(this.get(from) == null) return false;
+        var moves = this.getValidMoves(from);
+        if(moves == null) return false;
+        for(let i=0; i<moves.length; i++) {
+            if(moves[i].equals(to)) return true;
+        }
+        return false;
+    }
+
+    setChecked() {
+        var whiteKing = this.getKing("white");
+        var blackKing = this.getKing("black");
+
+        for(let y=0; y<8; y++) {
+            for(let x=0; x<8; x++) 
+            {
+                var pos = new Position(x,y);
+                var piece = this.get(pos);
+                if(piece == null) continue;
+                if(this.canTake(pos, (piece.team == "white")? blackKing : whiteKing)) {
+                    this.check = (piece.team == "white")? "black" : "white";
+                    return
+                }
+            }
+        }
+        this.check = null;
+
     }
 
     pushIfValid(array, from, to) {
@@ -199,6 +242,7 @@ class Game {
     nextTurn() {
         console.log("nextTurn");
         this.turn = (this.turn == "black")? "white" : "black";
+        this.setChecked();
     }
 
     move(from, to) {
@@ -294,5 +338,12 @@ class Position {
 
     static norm(pos) {
         return (new Position(Math.floor(pos.x/75),Math.floor(pos.y/75)));
+    }
+
+    equals(pos) {
+        if(pos == null) return false;
+        if(pos.x != this.x) return false;
+        if(pos.y != this.y) return false;
+        return true;
     }
 }
