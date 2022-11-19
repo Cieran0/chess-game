@@ -1,76 +1,3 @@
-let game = null;
-let selectedPiece = null;
-
-window.onload = function() {
-    MouseHandler.setUpMouseEvent();
-    game = new Game();
-    Canvas.drawBoard();
-};
-
- function contains(array, pos) {
-    var result = false;
-    array.forEach(element => {
-        if(element.x == pos.x && element.y == pos.y) {
-            result = true;
-        }
-    });
-    return result;
-}
-
-class Canvas {
-
-    static ctx;
-
-    static drawBoard() {
-        var c = document.getElementById('board');
-        this.ctx = c.getContext("2d");
-        this.ctx.beginPath();
-        this.ctx.rect(0, 0, 800, 800);
-        this.ctx.fillStyle = "white";
-        this.ctx.fill();
-        for (let i = 0; i <8; i++) {
-            this.drawLine(i);
-        }
-        this.drawValidMoves();
-        this.drawPieces();
-        document.getElementById("turn").innerHTML = "Turn: " + game.turn;
-        document.getElementById("check").innerHTML = "Check: " + game.check;
-    }
-    
-    static drawLine(y) {
-        var start = (y%2 == 0)? 1 : 0;
-        for (;start < 8; start+=2) {
-            this.drawSquare(start,y, " #46AA22");
-        }
-    }
-    
-    static drawSquare(x, y, colour) {
-        this.ctx.beginPath();
-        this.ctx.rect(x*75, y*75, 75, 75);
-        this.ctx.fillStyle = colour;
-        this.ctx.fill();
-    }
-
-    static drawPiece(x,y) {
-        if(game.board[x][y] == null) return;
-        let str = game.board[x][y].team[0] + (game.board[x][y].type.toUpperCase());
-        this.ctx.drawImage(document.getElementById(str), 75*x, 75*y, 75, 75)
-    }
-
-    static drawPieces() {
-        for(let y=0;y<8;y++) for(let x=0;x<8;x++) this.drawPiece(x,y);
-    }
-
-    static drawValidMoves() {
-        if(selectedPiece == null) return;
-        var validMoves = game.getValidMoves(selectedPiece);
-        if(validMoves == null || validMoves.length < 1) return;
-        validMoves.forEach(element => {
-            this.drawSquare(element.x,element.y,"cyan");
-        });
-    }
-}
-
 class Game {
     constructor() {
         this.board = new Array(8);
@@ -78,6 +5,35 @@ class Game {
         this.setUpPieces();
         this.turn = "white";
         this.check = null;
+    }
+
+    getCheckMate() {
+        this.setChecked();
+        if(this.check == null) return null;
+        var checkMate = true;
+        for(let y=0; y<8; y++) {
+            for(let x=0; x<8; x++) 
+            {
+                var p = this.board[x][y];
+                if(p == null) continue;
+                if(p.team != this.check) continue;
+                if(this.getValidMoves(new Position(x,y)).length >= 1) return null;  
+            }
+        }
+        return this.check;
+    }
+
+    copyBoard() {
+        var newGame = new Game();
+        newGame.blank();
+        for(let y=0; y<8; y++) {
+            for(let x=0; x<8; x++) 
+            {
+                if(this.board[x][y] == null) continue;
+                newGame.board[x][y] = this.board[x][y].copy();
+            }
+        }
+        return newGame;
     }
 
     getKing(team) {
@@ -217,22 +173,45 @@ class Game {
         return this.rookMoves(pos).concat(this.bishopMoves(pos));
     }
 
+    unChecks(pos, move) {
+        var vBoard = this.copyBoard();
+        vBoard.check = null;
+        vBoard.move(pos,move);
+        vBoard.setChecked();
+        if(vBoard.check != this.get(pos).team) return true;
+        return false;
+    }
+
+    removeNonUnCheckingMoves(pos, validMoves) {
+        return validMoves.filter(m => this.unChecks(pos,m));
+    }
+
     getValidMoves(pos) {
+        var validMoves = new Array();
         switch (this.get(pos).type) {
             case "pawn":
-                return this.pawnMoves(pos); 
+                validMoves = this.pawnMoves(pos); 
+                break;
             case "rook":
-                return this.rookMoves(pos);
+                validMoves = this.rookMoves(pos);
+                break;
             case "bishop":
-                return this.bishopMoves(pos);
+                validMoves = this.bishopMoves(pos);
+                break;
             case "knight":
-                return this.knightMoves(pos);
+                validMoves = this.knightMoves(pos);
+                break;
             case "king":
-                return this.kingMoves(pos);
+                validMoves = this.kingMoves(pos);
+                break;
             case "queen":
-                return this.queenMoves(pos);
+                validMoves = this.queenMoves(pos);
+                break;
         }
-        return null;
+        if(this.check == this.get(pos).team) {
+            validMoves = this.removeNonUnCheckingMoves(pos,validMoves);
+        }
+        return validMoves;
     }
 
     get(pos) {
@@ -243,6 +222,8 @@ class Game {
         console.log("nextTurn");
         this.turn = (this.turn == "black")? "white" : "black";
         this.setChecked();
+        var loser = this.getCheckMate()
+        if(loser != null) checkMate(loser);
     }
 
     move(from, to) {
@@ -279,71 +260,5 @@ class Game {
                 this.board[i][j] = null;
             }
         }
-    }
-}
-
-class Piece {
-    constructor(type, team) {
-        this.type = type;
-        this.team = team;
-        this.hasMoved = false;
-    }
-}
-
-class MouseHandler {
-
-    static getMousePos(canvas, evt) {
-        var rect = canvas.getBoundingClientRect();
-        return Position.norm(new Position(
-            /*x:*/ evt.clientX - rect.left,
-            /*y:*/ evt.clientY - rect.top
-        ));
-    }
-
-    static handleMouse(mousePos) {
-        if(selectedPiece == null) {
-            if(game.get(mousePos) != null) {
-                selectedPiece = (game.get(mousePos).team == game.turn)? Position.copyPos(mousePos) : null;
-                console.log(selectedPiece)
-            }
-        } else {
-            if(contains(game.getValidMoves(selectedPiece),mousePos)) {
-                game.move(selectedPiece,mousePos);
-                selectedPiece = null;
-                game.nextTurn();
-            } else {
-                selectedPiece = null;
-            }
-        }
-        Canvas.drawBoard();
-    }
-
-    static setUpMouseEvent() {
-        var canvas = document.getElementById("board");
-        canvas.addEventListener("click", function (evt) {
-            MouseHandler.handleMouse(MouseHandler.getMousePos(canvas, evt));
-        }, false);
-    }
-}
-
-class Position {
-    constructor(x,y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    static copyPos(pos) {
-        return new Position(pos.x,pos.y);
-    }
-
-    static norm(pos) {
-        return (new Position(Math.floor(pos.x/75),Math.floor(pos.y/75)));
-    }
-
-    equals(pos) {
-        if(pos == null) return false;
-        if(pos.x != this.x) return false;
-        if(pos.y != this.y) return false;
-        return true;
     }
 }
