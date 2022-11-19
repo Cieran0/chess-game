@@ -1,2 +1,2 @@
-# chess-game
+# Chess Game
 Chess game made in javascript!
