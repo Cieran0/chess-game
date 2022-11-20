@@ -5,6 +5,7 @@ class Game {
         this.setUpPieces();
         this.turn = "white";
         this.check = null;
+        this.promo = null;
     }
 
     getCheckMate() {
@@ -186,6 +187,7 @@ class Game {
         return validMoves.filter(m => this.unChecks(pos,m));
     }
 
+    //FIXME: allows user to put themselves in check, should not allow
     getValidMoves(pos) {
         var validMoves = new Array();
         switch (this.get(pos).type) {
@@ -226,11 +228,24 @@ class Game {
         if(loser != null) checkMate(loser);
     }
 
+    promote(type) {
+        this.board[this.promo.x][this.promo.y].type = type;
+        this.promo = null;
+    }
+
+    setPromo(pos) {
+        this.promo = pos;
+        turnButtonsOn(this.turn);
+    }
+
     move(from, to) {
         console.log("Moving!")
         this.board[from.x][from.y].hasMoved = true;
         this.board[to.x][to.y] = this.board[from.x][from.y];
         this.board[from.x][from.y] = null;
+        if(this.board[to.x][to.y].type == "pawn" && (to.y == 7 || to.y == 0)) {
+            this.setPromo(to);
+        }
     }
 
     setUpPieces() {

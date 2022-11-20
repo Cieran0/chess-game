@@ -15,6 +15,35 @@ h1 {
     text-align: center;
 }
 
+#main {
+    position: absolute;
+    z-index: 1;
+    width: 100%;
+    margin: auto;
+}
+
+dialog {
+    border:3px solid #000000;
+    padding: 0;
+    margin: 40.5%;
+    margin-top: 4.75%;
+    width: 300px;
+    height: 75px;
+    position: absolute;
+    z-index: 10;
+    font-size: 0;
+}
+
+button {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background-image: url("pieces/bBISHOP.png");
+    background-size: 75px;
+    width: 75px;
+    height: 75px;
+}
+
 img {
     display: none;
 }
