@@ -9,6 +9,9 @@ class MouseHandler {
     }
 
     static handleMouse(mousePos) {
+        if(game.promo != null) {
+            return;
+        }
         if(selectedPiece == null) {
             if(game.get(mousePos) != null) {
                 selectedPiece = (game.get(mousePos).team == game.turn)? Position.copyPos(mousePos) : null;

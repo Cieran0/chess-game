@@ -3,6 +3,7 @@
 <head>
     <title>Chess</title>
     <link rel="stylesheet" href="style.css">
+    <script src="scripts/buttons.js"></script>
     <script src="scripts/position.js"></script>
     <script src="scripts/mouse.js"></script>
     <script src="scripts/piece.js"></script>
@@ -11,9 +12,17 @@
     <script src="scripts/main.js"></script>
 </head>
 <body>
-    <canvas id="board" width="600" height="600"></canvas>
-    <h1 id="turn"> Turn: white</h1>
-    <h1 id="check"></h1>
+    <div id="main">
+        <canvas id="board" width="600" height="600"></canvas>
+        <h1 id="turn"> Turn: white</h1>
+        <h1 id="check"></h1>
+    </div>
+    <dialog id="dialog">
+        <button id="queen"></button>
+        <button id="bishop"></button>
+        <button id="knight"></button>
+        <button id="rook"></button>
+    </dialog>
     <img src="pieces/bBISHOP.png" id="bBISHOP"/>
     <img src="pieces/bKING.png" id="bKING"/>
     <img src="pieces/bKNIGHT.png" id="bKNIGHT"/>
