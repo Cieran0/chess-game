@@ -6,6 +6,7 @@ class Game {
         this.turn = "white";
         this.check = null;
         this.promo = null;
+        this.main = true;
     }
 
     getCheckMate() {
@@ -176,6 +177,7 @@ class Game {
 
     unChecks(pos, move) {
         var vBoard = this.copyBoard();
+        vBoard.main = false;
         vBoard.check = null;
         vBoard.move(pos,move);
         vBoard.setChecked();
@@ -183,11 +185,10 @@ class Game {
         return false;
     }
 
-    removeNonUnCheckingMoves(pos, validMoves) {
+    removeMovesThatPutInCheck(pos, validMoves) {
         return validMoves.filter(m => this.unChecks(pos,m));
     }
 
-    //FIXME: allows user to put themselves in check, should not allow
     getValidMoves(pos) {
         var validMoves = new Array();
         switch (this.get(pos).type) {
@@ -210,8 +211,8 @@ class Game {
                 validMoves = this.queenMoves(pos);
                 break;
         }
-        if(this.check == this.get(pos).team) {
-            validMoves = this.removeNonUnCheckingMoves(pos,validMoves);
+        if(this.main) {
+            validMoves = this.removeMovesThatPutInCheck(pos,validMoves);
         }
         return validMoves;
     }
